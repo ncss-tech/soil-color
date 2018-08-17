@@ -1,0 +1,106 @@
+---
+title: "SOP for Soil Color Measurement with Nix Pro"
+author: "Edwin Rivas"
+date: "June 22, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+The Nix Pro is utilized as an additional method to determine dry soil color. It is not intended for field use but rather in the lab. The purpose of this device is to enhance the level of accuracy when determining a soil color. This is not to be used as the sole method for soil color determination but as an extra tool for soil color determination.
+
+
+## About the Device
+
+The Nix Pro is a black diamond-shaped device with two light sources and a color sensor at the tip. The device is operated through a cellular device, or any device that can support the Nix Pro Color Sensor app and has bluetooth capabilities. It is charged through a micro-USB port.
+
+## Maintenance
+
+The sensor and light sources are covered by windows that can be scratched or dirtied by the soil if not handled correctly. Use a soft bristled brush to clean the sensor and light windows frequently. Always have the sensor facing down and raised above your head when cleaning. Given no manual method to calibrate the Nix, every 10 samples, scan the white tile provided and ensure it lies within the the following parameters.
+
+```{r echo=FALSE}
+x <- read.csv('Tile_Calibration_Test.csv', stringsAsFactors = FALSE)
+head(x)
+
+```
+
+standard deviation
+```{r echo=TRUE}
+round(apply(x[, -1], 2, sd), 2)
+```
+
+## General Instructions for Preparing a Soil Sample and Operating the Device
+
+1. Clean all equipment utilized (plastic capsules, pestle, plastic dish, and sieve) with water and sponge. Dry equipment thoroughly
+2. Choose ped(s) from the sample box large enough to nearly fill the plastic capsules
+3. Break ped(s) into smaller pieces (if necessary) by putting it in between a paper towel and crushing it with the pestle
+4. Transfer the ped into the 2mm sieve and further crush ped by applying pressure along the sides of the sieve, avoid applying pressure on the mesh
+5. Crush soil further within the bowl of the 2mm sieve, using only the weight of the pestle
+6. Transfer sieved soil into the 500 micrometer sieve
+7. Swirl sieve to separate
+8. Transfer soil <500 micrometer onto the plastic dish
+9. Transfer soil from dish to the capsule overfilling it
+10. Carefully scrape excess off to leaving it flat and filled to capacity
+11. Carefully lay the Nix on top of the sample ensuring it does not go too deep
+12. Run a test to see if there is light escaping
+13. Run the test(s) using device
+14. Gently pull away Nix with sensor facing down
+15. Carefully brush away residue left on the Nix by brushing it away from the sensor 
+16. Wipe equipment with a paper towel in between horizons 
+17. Re-clean equipment with water in between boxes
+
+## Notes
+
+If soils within the same box vary in color drastically, wash the equipment in between the horizons.
+
+## Lab Sheet Notes
+Create a "lab sheet" before scanning a batch of samples. Each lab sheet should contain the following:
+ * peiid: pedon record ID
+ * phiid: pedon horizon record ID
+ * user site ID
+ * user pedon ID
+ * horizon depths and designations
+ * sample (serial) number, 1 to number of rows in the lab sheet
+ * L, A, B entries
+ 
+Sample (serial) numbers are specific to a lab sheet. Save scans to a folder named after the lab sheet, with each scan labeled using the serial number. Record CIE L, A, and B values on the paper copy of the lab sheet as a backup. Multiple scans of the same sample should use the same serial number (these values can be averaged later). When completed, a lab sheet can be converted into a final electronic copy that includes NASIS IDs and CIE LAB values for further analysis. Retain paper copies just in case.
+
+
+## Converting from LAB Color Space to Munsell Chips
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+# load required libraries
+library(colorspace)
+library(aqp)
+library(plyr)
+
+# load CSV files  
+x <- read.csv('Pedon-color-data.csv', stringsAsFactors = FALSE, na.strings = '-')
+
+# check the results
+str(x)
+head(x)
+
+# create LAB object
+x.lab <- LAB(x$L, x$A, x$B, names=x$Color.Name)
+
+# check graphically
+plot(x.lab, cex=5)
+
+# convert to sRGB
+x.srgb <- as(x.lab, 'sRGB')
+plot(x.srgb, cex=5)
+
+# convert to closest Munsell chip
+# the @coords extracts just the color coordinates as a matrix
+x.munsell <- rgb2munsell(x.srgb@coords)
+
+## Results
+x.munsell
+```
+
