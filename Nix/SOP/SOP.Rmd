@@ -73,9 +73,7 @@ Sample (serial) numbers are specific to a lab sheet. Save scans to a folder name
 ## Converting from LAB Color Space to Munsell Chips
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-
 # load required libraries
-library(colorspace)
 library(aqp)
 library(plyr)
 
@@ -86,21 +84,30 @@ x <- read.csv('Pedon-color-data.csv', stringsAsFactors = FALSE, na.strings = '-'
 str(x)
 head(x)
 
-# create LAB object
-x.lab <- LAB(x$L, x$A, x$B, names=x$Color.Name)
+# convert to sRGB
+x.srgb <- convertColor(x[, c('L', 'A', 'B')], from='Lab', to='sRGB', from.ref.white = 'D65')
+
+# remove NA
+x.srgb <- na.omit(x.srgb)
+
+# convert to hex notation
+x.cols <- rgb(x.srgb)
 
 # check graphically
-plot(x.lab, cex=5)
+previewColors(x.cols)
+```
 
-# convert to sRGB
-x.srgb <- as(x.lab, 'sRGB')
-plot(x.srgb, cex=5)
+```{r echo=TRUE, message=FALSE, warning=FALSE, fig.height=8}
+# quantiles
+cq <- colorQuantiles(x.cols)
+plotColorQuantiles(cq)
+```
 
-# convert to closest Munsell chip
-# the @coords extracts just the color coordinates as a matrix
-x.munsell <- rgb2munsell(x.srgb@coords)
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# convert to closest Munsell chip from sRGB
+x.munsell <- rgb2munsell(x.srgb)
 
 ## Results
-x.munsell
+knitr::kable(x.munsell, row.names = FALSE)
 ```
 
