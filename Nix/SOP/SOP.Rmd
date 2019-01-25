@@ -1,8 +1,12 @@
 ---
 title: "SOP for Soil Color Measurement with Nix Pro"
-author: "Edwin Rivas"
-date: "June 22, 2017"
-output: html_document
+author: "Edwin Rivas and D.E. Beaudette"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    mathjax: null
+    jquery: null
+    smart: no
 ---
 
 ```{r setup, include=FALSE}
@@ -11,24 +15,23 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Overview
 
-The Nix Pro is utilized as an additional method to determine dry soil color. It is not intended for field use but rather in the lab. The purpose of this device is to enhance the level of accuracy when determining a soil color. This is not to be used as the sole method for soil color determination but as an extra tool for soil color determination.
+The Nix Pro is useful for rapidly measuring soil color on prepared samples in a lab setting. Our testing suggests that moisture content and sample roughness can have a very large impact on the measured color and variations between repeat measurements.
 
 
 ## About the Device
 
-The Nix Pro is a black diamond-shaped device with two light sources and a color sensor at the tip. The device is operated through a cellular device, or any device that can support the Nix Pro Color Sensor app and has bluetooth capabilities. It is charged through a micro-USB port.
+The Nix Pro is a black diamond-shaped device with two light sources and a color sensor at the tip. The device is operated through a cellular device, or any device that can support the Nix Pro Color Sensor app and has bluetooth capabilities. It is charged through a micro-USB port. We recommend setting the standard illuminant to **D65**.
 
 ## Maintenance
 
-The sensor and light sources are covered by windows that can be scratched or dirtied by the soil if not handled correctly. Use a soft bristled brush to clean the sensor and light windows frequently. Always have the sensor facing down and raised above your head when cleaning. Given no manual method to calibrate the Nix, every 10 samples, scan the white tile provided and ensure it lies within the the following parameters.
+The sensor and light sources are covered by windows that can be scratched or dirtied by the soil if not handled correctly. Use a soft bristled brush to clean the sensor and light windows frequently. Always have the sensor facing down and raised above your head when cleaning. Given no manual method to calibrate the Nix, every 10 samples, scan the white tile provided and ensure meaurements aren't drifting.
 
 ```{r echo=FALSE}
 x <- read.csv('Tile_Calibration_Test.csv', stringsAsFactors = FALSE)
-head(x)
-
+knitr::kable(head(x), row.names = FALSE)
 ```
 
-standard deviation
+The standard deviation of all measurements of the white reference tile should be "small".
 ```{r echo=TRUE}
 round(apply(x[, -1], 2, sd), 2)
 ```
@@ -39,18 +42,18 @@ round(apply(x[, -1], 2, sd), 2)
 2. Choose ped(s) from the sample box large enough to nearly fill the plastic capsules
 3. Break ped(s) into smaller pieces (if necessary) by putting it in between a paper towel and crushing it with the pestle
 4. Transfer the ped into the 2mm sieve and further crush ped by applying pressure along the sides of the sieve, avoid applying pressure on the mesh
-5. Crush soil further within the bowl of the 2mm sieve, using only the weight of the pestle
+5. Crush soil further within the pan of the 2mm sieve, using only the weight of the pestle
 6. Transfer sieved soil into the 500 micrometer sieve
 7. Swirl sieve to separate
 8. Transfer soil <500 micrometer onto the plastic dish
 9. Transfer soil from dish to the capsule overfilling it
 10. Carefully scrape excess off to leaving it flat and filled to capacity
-11. Carefully lay the Nix on top of the sample ensuring it does not go too deep
+11. Carefully position the Nix on top of the sample ensuring it does not go too deep
 12. Run a test to see if there is light escaping
-13. Run the test(s) using device
+13. Measure the color several times
 14. Gently pull away Nix with sensor facing down
 15. Carefully brush away residue left on the Nix by brushing it away from the sensor 
-16. Wipe equipment with a paper towel in between horizons 
+16. Wipe equipment with a paper towel in between samples 
 17. Re-clean equipment with water in between boxes
 
 ## Notes
@@ -59,6 +62,7 @@ If soils within the same box vary in color drastically, wash the equipment in be
 
 ## Lab Sheet Notes
 Create a "lab sheet" before scanning a batch of samples. Each lab sheet should contain the following:
+
  * peiid: pedon record ID
  * phiid: pedon horizon record ID
  * user site ID
@@ -71,18 +75,21 @@ Sample (serial) numbers are specific to a lab sheet. Save scans to a folder name
 
 
 ## Converting from LAB Color Space to Munsell Chips
+Note that color space conversion depends on specification of the correct illuminant. The default for the Nix Pro (may?) be D50. Be sure to adjust as needed.
+
+The function `rgb2munsell()` will lookup the closest Munsell chip using sRGB (D65 illuminant) coordinates. 
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # load required libraries
 library(aqp)
+library(sharpshootR)
 library(plyr)
 
 # load CSV files  
 x <- read.csv('Pedon-color-data.csv', stringsAsFactors = FALSE, na.strings = '-')
 
-# check the results
-str(x)
-head(x)
+# check the lab sheet with LAB values as measured by the Nix Pro
+knitr::kable(head(x), row.names = FALSE)
 
 # convert to sRGB
 x.srgb <- convertColor(x[, c('L', 'A', 'B')], from='Lab', to='sRGB', from.ref.white = 'D65')
@@ -97,12 +104,32 @@ x.cols <- rgb(x.srgb)
 previewColors(x.cols)
 ```
 
+
+Estimate proportions of colors, as grouped into 8 classes via partitioning around medoids (`cluster::pam`), in LAB coordinates.
+```{r echo=TRUE, message=FALSE, warning=FALSE, fig.width=8, fig.height=4}
+# prepare a fake SoilProfileCollection object
+s <- data.frame(group='All\nSamples', id=seq_along(x.cols), top=0, bottom=1, soil_color=x.cols, stringsAsFactors = FALSE)
+depths(s) <- id ~ top + bottom
+site(s) <- ~ group
+
+# aggregate color
+a <- aggregateColor(s, groups='group', col='soil_color', k = 8)
+
+# plot
+par(mar=c(4,4,1,1))
+aggregateColorPlot(a, label.cex = 1)
+```
+
+
+Evaluate marginal percentiles of L, A, B, and geometric (L1) median.
 ```{r echo=TRUE, message=FALSE, warning=FALSE, fig.height=8}
 # quantiles
 cq <- colorQuantiles(x.cols)
 plotColorQuantiles(cq)
 ```
 
+
+Check all LAB &rarr; Munsell conversions.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # convert to closest Munsell chip from sRGB
 x.munsell <- rgb2munsell(x.srgb)
@@ -110,4 +137,6 @@ x.munsell <- rgb2munsell(x.srgb)
 ## Results
 knitr::kable(x.munsell, row.names = FALSE)
 ```
+
+
 
