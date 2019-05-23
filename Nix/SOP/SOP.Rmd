@@ -83,7 +83,7 @@ The function `rgb2munsell()` will lookup the closest Munsell chip using sRGB (D6
 # load required libraries
 library(aqp)
 library(sharpshootR)
-library(plyr)
+library(Gmedian)
 
 # load CSV files  
 x <- read.csv('Pedon-color-data.csv', stringsAsFactors = FALSE, na.strings = '-')

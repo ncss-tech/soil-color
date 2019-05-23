@@ -11,7 +11,7 @@
 
 <meta name="author" content="Edwin Rivas and D.E. Beaudette" />
 
-<meta name="date" content="2019-01-25" />
+<meta name="date" content="2019-05-23" />
 
 <title>SOP for Soil Color Measurement with Nix Pro</title>
 
@@ -71,9 +71,7 @@ h6 {
 </style>
 
 
-</head>
 
-<body>
 
 <style type="text/css">
 .main-container {
@@ -104,8 +102,6 @@ summary {
 </style>
 
 
-
-<div class="container-fluid main-container">
 
 <!-- tabsets -->
 
@@ -180,14 +176,23 @@ $(document).ready(function () {
 
 
 
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
 
 <div class="fluid-row" id="header">
 
 
 
 <h1 class="title toc-ignore">SOP for Soil Color Measurement with Nix Pro</h1>
-<h4 class="author"><em>Edwin Rivas and D.E. Beaudette</em></h4>
-<h4 class="date"><em>2019-01-25</em></h4>
+<h4 class="author">Edwin Rivas and D.E. Beaudette</h4>
+<h4 class="date">2019-05-23</h4>
 
 </div>
 
@@ -303,7 +308,7 @@ $(document).ready(function () {
 <pre class="r"><code># load required libraries
 library(aqp)
 library(sharpshootR)
-library(plyr)
+library(Gmedian)
 
 # load CSV files  
 x &lt;- read.csv('Pedon-color-data.csv', stringsAsFactors = FALSE, na.strings = '-')
