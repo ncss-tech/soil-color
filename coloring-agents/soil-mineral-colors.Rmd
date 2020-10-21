@@ -22,7 +22,7 @@ You probably noticed the *minor* technical error: humus is not a soil mineral. H
 
 Note that these colors were derived from a set of pure specimens under ideal lighting conditions. Soil colors in the field represent a complex moisture of pigments that are expressed differently as a function of particle size, organic matter content, water content, viewing angle, and lighting conditions (and many other factors of course). Have a look at some of the links below for more information on soil color.
 
-Colors are organized according to a [divisive hierarchical clustering](https://en.wikipedia.org/wiki/Hierarchical_clustering#Divisive_clustering) of [CIE LAB](https://en.wikipedia.org/wiki/Lab_color_space) coordinates. Conversion of Munsell colors to sRGB was performed with the `munsell2rgb()` function from the [aqp](https://github.com/ncss-tech/aqp) package for R. Conversion of sRGB to LAB coordinates was performed with the [colorspace](https://cran.r-project.org/web/packages/colorspace/index.html) package for R.
+Colors are organized according to a [divisive hierarchical clustering](https://en.wikipedia.org/wiki/Hierarchical_clustering#Divisive_clustering) of [CIE LAB](https://en.wikipedia.org/wiki/Lab_color_space) coordinates. Conversion of Munsell colors to CIELAB was performed with the `munsell2rgb()` function from the [aqp](https://github.com/ncss-tech/aqp) package for R.
 
 ### Iron Oxides in the Soil Environment
 |Iron Oxide     |Soil Environment                                        |
@@ -58,31 +58,43 @@ Table: Adapted from Bigham et al. (2002).
 
 ## R Code
 You will probably need the latest version of [aqp](https://github.com/ncss-tech/aqp):
-```r
-devtools::install_github("ncss-tech/aqp", dependencies=FALSE, upgrade_dependencies=FALSE)
+```{r eval=FALSE}
+remotes::install_github("ncss-tech/aqp", dependencies=FALSE, upgrade_dependencies=FALSE)
 ```
 
 Feel free to re-make the above figure according to your aesthetic wants. 
-```r
+```{r eval = FALSE}
 library(aqp)
 library(ape)
 library(cluster)
-library(colorspace)
 
 # load common soil mineral colors
 data(soil_minerals)
+
 # convert Munsell to R colors
 soil_minerals$col <- munsell2rgb(soil_minerals$hue, soil_minerals$value, soil_minerals$chroma)
 
 # make a grid for plotting
 n <- ceiling(sqrt(nrow(soil_minerals)))
+
 # read from top-left to bottom-right
 g <- expand.grid(x=1:n, y=n:1)[1:nrow(soil_minerals),]
 
-# convert Munsell -> sRGB -> LAB
-col.rgb <- munsell2rgb(soil_minerals$hue, soil_minerals$value, soil_minerals$chroma, return_triplets = TRUE)
-col.lab <- as(sRGB(as.matrix(col.rgb)), 'LAB')@coords
+# convert Munsell notation -> CIELAB coordinates
+# row-order is preserved
+col.lab <- with(
+  soil_minerals,
+  munsell2rgb(
+    hue, 
+    value, 
+    chroma, 
+    returnLAB = TRUE
+  )
+)
+
+# copy mineral names to CIELAB coordinates
 row.names(col.lab) <- soil_minerals$mineral
+
 
 # divisive hierarchical clustering of LAB coordinates
 d <- daisy(col.lab)
