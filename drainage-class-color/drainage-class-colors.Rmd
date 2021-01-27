@@ -11,7 +11,6 @@ output:
 
 ```{r setup, echo=FALSE, results='hide', warning=FALSE}
 library(knitr, quietly=TRUE)
-library(printr, quietly=TRUE)
 opts_chunk$set(message=FALSE, warning=FALSE, background='#F7F7F7', fig.align='center', fig.retina=2, dev='png', tidy=FALSE, verbose=FALSE)
 options(width=100, stringsAsFactors=FALSE)
 ```
@@ -26,6 +25,7 @@ This document is based on `aqp` version `r utils::packageDescription("aqp", fiel
 
 ```{r}
 # load required libaries
+library(aqp)
 library(soilDB)
 library(sharpshootR)
 library(cluster)
@@ -117,7 +117,7 @@ new.order <- match(c('Whiterock', 'Copperopolis', 'Amador', 'Auburn', 'Loafercre
 
 ```{r plot-color, fig.width=14, fig.height=6, htmlcap='sdfsdfsdf'}
 par(mar=c(1,0,3,0))
-plot(x.colors, divide.hz=FALSE, name='', plot.order=new.order, col.label='Soil Color', lwd=1.25, axis.line.offset=-6, cex.depth.axis=1, cex.id=1)
+plot(x.colors, divide.hz=FALSE, name=NA, plot.order=new.order, col.label='Soil Color', lwd=1.25, axis.line.offset=-6, cex.depth.axis=1, cex.id=1)
 addBracket(x.colors$soil.top, x.colors$soil.bottom, col='black', label='P(soil >= 90%)', label.cex=0.85)
 title('Aggregate Soil Properties')
 ```

@@ -24,17 +24,33 @@ The Nix Pro is a black diamond-shaped device with two light sources and a color 
 
 ## Maintenance
 
-The sensor and light sources are covered by windows that can be scratched or dirtied by the soil if not handled correctly. Use a soft bristled brush to clean the sensor and light windows frequently. Always have the sensor facing down and raised above your head when cleaning. Given no manual method to calibrate the Nix, every 10 samples, scan the white tile provided and ensure meaurements aren't drifting.
+The sensor and light sources are covered by windows that can be scratched or dirtied by the soil if not handled correctly. Use a soft bristled brush to clean the sensor and light windows frequently. Always have the sensor facing down and raised above your head when cleaning. Given no manual method to calibrate the Nix, every 10 samples, scan the white tile provided and ensure measurements aren't drifting.
 
 ```{r echo=FALSE}
 x <- read.csv('Tile_Calibration_Test.csv', stringsAsFactors = FALSE)
 knitr::kable(head(x), row.names = FALSE)
 ```
 
-The standard deviation of all measurements of the white reference tile should be "small".
+The standard deviation of all measurements of the white reference tile should be less than 1 unit. .
 ```{r echo=TRUE}
 round(apply(x[, -1], 2, sd), 2)
 ```
+
+The overall contrast (CIE2000 or $\Delta E_{00}$) within these measurements should be less than 1.
+```{r}
+dE00 <- farver::compare_colour(
+  x[, -1], 
+  from_space = 'lab', 
+  to_space = 'lab', 
+  white_from = 'D65', 
+  white_to = 'D65', 
+  method = 'CIE2000'
+)
+
+# dE00
+round(range(dE00), 2)
+```
+
 
 ## General Instructions for Preparing a Soil Sample and Operating the Device
 
@@ -84,6 +100,7 @@ The function `rgb2munsell()` will lookup the closest Munsell chip using sRGB (D6
 library(aqp)
 library(sharpshootR)
 library(Gmedian)
+library(farver)
 
 # load CSV files  
 x <- read.csv('Pedon-color-data.csv', stringsAsFactors = FALSE, na.strings = '-')
@@ -92,13 +109,15 @@ x <- read.csv('Pedon-color-data.csv', stringsAsFactors = FALSE, na.strings = '-'
 knitr::kable(head(x), row.names = FALSE)
 
 # convert to sRGB
-x.srgb <- convertColor(x[, c('L', 'A', 'B')], from='Lab', to='sRGB', from.ref.white = 'D65')
+# result is in the interval of 0-255
+x.srgb <- convert_colour(x[, c('L', 'A', 'B')], from = 'lab', to = 'rgb', white_from = 'D65', white_to = 'D65')
 
 # remove NA
 x.srgb <- na.omit(x.srgb)
 
 # convert to hex notation
-x.cols <- rgb(x.srgb)
+# set max color value for correct encoding
+x.cols <- rgb(x.srgb, maxColorValue = 255)
 
 # check graphically
 previewColors(x.cols)
@@ -108,7 +127,15 @@ previewColors(x.cols)
 Estimate proportions of colors, as grouped into 8 classes via partitioning around medoids (`cluster::pam`), in LAB coordinates.
 ```{r echo=TRUE, message=FALSE, warning=FALSE, fig.width=8, fig.height=4}
 # prepare a fake SoilProfileCollection object
-s <- data.frame(group='All\nSamples', id=seq_along(x.cols), top=0, bottom=1, soil_color=x.cols, stringsAsFactors = FALSE)
+s <- data.frame(
+  group = 'All\nSamples', 
+  id = seq_along(x.cols), 
+  top = 0, 
+  bottom = 1, 
+  soil_color = x.cols, 
+  stringsAsFactors = FALSE
+)
+
 depths(s) <- id ~ top + bottom
 site(s) <- ~ group
 
@@ -116,7 +143,7 @@ site(s) <- ~ group
 a <- aggregateColor(s, groups='group', col='soil_color', k = 8)
 
 # plot
-par(mar=c(4,4,1,1))
+par(mar=c(4.5,4,1,1))
 aggregateColorPlot(a, label.cex = 1)
 ```
 
@@ -132,9 +159,10 @@ plotColorQuantiles(cq)
 Check all LAB &rarr; Munsell conversions.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # convert to closest Munsell chip from sRGB
-x.munsell <- rgb2munsell(x.srgb)
+# function expects sRGB in the range of 0-1
+x.munsell <- rgb2munsell(x.srgb / 255)
 
-## Results
+# Results
 knitr::kable(x.munsell, row.names = FALSE)
 ```
 
