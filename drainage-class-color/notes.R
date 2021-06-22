@@ -1,4 +1,4 @@
-# load required libaries
+library(aqp)
 library(soilDB)
 library(sharpshootR)
 library(cluster)
@@ -13,7 +13,7 @@ library(MASS)
 x <- read.csv('mlra_drainage_colors.csv.gz', stringsAsFactors = FALSE)
 
 # check data
-xtabs(~ mlra + drainagecl, data=x)
+xtabs(~ mlra + drainagecl, data = x)
 
 # remove records missing drainage class
 x <- subset(x, subset=drainagecl != '')
@@ -24,7 +24,9 @@ mlra.set <- c('136', '133A', '137', '130B', '148') # great example based on ceci
 x <- subset(x, mlra %in% mlra.set)
 
 # set drainage class levels
-x$drainagecl <- factor(x$drainagecl, levels=c('very poorly', 'poorly', 'somewhat poorly', 'moderately well', 'well', 'somewhat excessively', 'excessively'))
+x$drainagecl <- factor(x$drainagecl, levels = c('very poorly', 'poorly', 'somewhat poorly', 'moderately well', 'well', 'somewhat excessively', 'excessively'))
+
+table(x$drainagecl, useNA = 'always')
 
 # convert moist colors to HEX notation
 x$soil_color <- munsell2rgb(x$matrix_wet_color_hue, x$matrix_wet_color_value, x$matrix_wet_color_chroma)
@@ -52,7 +54,7 @@ site(x) <- ~ drainagecl
 a.colors <- slab(x, drainagecl ~ m_L + m_A + m_B)
 
 # throw out aggregate data that are deeper than 150cm
-a.colors <- subset(a.colors, subset=bottom < 150)
+a.colors <- subset(a.colors, subset = bottom < 150)
 
 # convert long -> wide format
 x.colors <- dcast(a.colors, drainagecl + top + bottom ~ variable, value.var = 'p.q50')
@@ -80,10 +82,12 @@ new.order <- match(c('very poorly', 'poorly', 'somewhat poorly', 'moderately wel
 mlra.set.text <- paste(mlra.set, collapse = ', ')
 mlra.set.text.2 <- paste(mlra.set, collapse = '_')
 fname <- paste0('example-', mlra.set.text.2, '.png')
+
 png(file=fname, res=100, width=800, height=400, type='windows', antialias = 'cleartype')
 
-par(mar=c(1,0.5,2,1))
-plot(x.colors, divide.hz=FALSE, name='', plot.order=new.order, col.label='Soil Color', lwd=1.25, axis.line.offset=-6, cex.depth.axis=1, cex.id=0.85, id.style='side')
+par(mar=c(0,0,1,2))
+
+plotSPC(x.colors, divide.hz=FALSE, name = NA, plot.order=new.order, col.label='Soil Color', lwd=1.25, axis.line.offset=-2, cex.depth.axis=1, cex.id=0.85, id.style='side')
 text(1:length(new.order), 0, table(x$drainagecl)[new.order], pos=3, cex=0.85)
 title(paste0("Soil Series from MLRAs: ", mlra.set.text), line=0)
 title(sub='median moist color, CIELAB color space', line=0)
